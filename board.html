@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <style>
+      body {
+        padding: 0px;
+        margin: 0px;
+        font-family: Tahoma, Geneva, Sans-Serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f0f0f0;
+      }
+      svg {
+        display: block;
+        max-width: 95vw;
+        max-height: 95vh;
+        margin: 0 auto;
+        border: 2px solid #666;
+        box-shadow: 5px 5px 10px #aaa;
+        border-radius: 5px;
+      }
+      .black {
+        fill: black;
+        stroke: white;
+        stroke-width: 1px;
+      }
+      .white {
+        fill: white;
+        stroke: black;
+        stroke-width: 1px;
+      }
+    
+    </style>
+    <script>
+      let player = "black",
+        moverId, //keeps track of what I'm dragging
+        moverPointerId, //keep track of the active pointer for the drag
+        myX,
+        myY;
+      const ROWS = 8,
+        COLS = 8;
+
+      function init() {
+        drawBoard();
+        const svg = document.querySelector('svg');
+        svg.addEventListener('pointermove', moveChecker);
+        svg.addEventListener('pointerup', releaseChecker);
+        svg.addEventListener('pointercancel', cancelPointer);
+        //prevent text on the SVG stage from getting highlighted
+        document
+          .querySelectorAll(`svg`)[0]
+          .addEventListener(`selectstart`, function (evt) {
+            evt.preventDefault();
+          });
+
+          //put the player on the board (youd get this from server)
+          document.querySelector(`#whichPlayer`).firstChild.data += player;
+      }
+      //create the svg board and pieces
+      function drawBoard() {
+        let board = "",
+          x,
+          y,
+          color,
+          cx,
+          cy;
+        const SQUARE_SIZE = 80;
+        const BOARD_WIDTH = SQUARE_SIZE * COLS;
+        const BOARD_HEIGHT = SQUARE_SIZE * ROWS;
+        const BOARD_START_X = (1200 - BOARD_WIDTH) / 2;  // Center horizontally in viewBox
+        const BOARD_START_Y = (800 - BOARD_HEIGHT) / 2;  // Center vertically in viewBox
+        const CHECKER_RADIUS = 30;
+        
+        //create othello board
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            x = SQUARE_SIZE * r + BOARD_START_X;
+            y = SQUARE_SIZE * c + BOARD_START_Y;
+            board += `<rect x="${x}" y="${y}" width="${SQUARE_SIZE}" height="${SQUARE_SIZE}" fill="lightgreen" 
+            stroke="black" stroke-width="2" id="target_${r}${c}" />`;
+          }
+        }
+        // place alternating 2x2 center pieces on the board
+        (function() {
+          const centerRows = [3, 4];
+          const centerCols = [3, 4];
+          for (let ri = 0; ri < centerRows.length; ri++) {
+            for (let ci = 0; ci < centerCols.length; ci++) {
+              const r = centerRows[ri];
+              const c = centerCols[ci];
+              cx = BOARD_START_X + (c * SQUARE_SIZE) + (SQUARE_SIZE / 2);
+              cy = BOARD_START_Y + (r * SQUARE_SIZE) + (SQUARE_SIZE / 2);
+              // (3,3) & (4,4) will be black, the other two white (default starting position, can't be moved)
+              const clr = ((r + c) % 2 === 0) ? 'black' : 'white';
+              board += `<circle cx="${cx}" cy="${cy}" r="${CHECKER_RADIUS}" class="${clr}" id="p_center_${r}${c}"/>`;
+            }
+          }
+        })();
+
+        //creates checkers on the sides
+        const SPACING = CHECKER_RADIUS * 1.2; // Space between checkers
+        const NUM_CHECKERS = 32; // Number of checkers per side
+        const COLUMNS = 2; 
+        const ROWS_PER_COL = Math.ceil(NUM_CHECKERS / COLUMNS); // Number of checkers per column so they dont go off the screen
+        
+        // Helper to create checkers on a side
+        function createCheckers(side, className, idPrefix, startX) {
+          for (let col = 0; col < COLUMNS; col++) {
+            for (let row = 0; row < ROWS_PER_COL; row++) {
+              const index = col * ROWS_PER_COL + row;
+              if (index < NUM_CHECKERS) {
+            cx = startX + (col * SPACING * 2);
+            cy = BOARD_START_Y + (row * SPACING) + SQUARE_SIZE;
+            board += `<circle cx="${cx}" cy="${cy}" r="${CHECKER_RADIUS}" class="${className}" id="${idPrefix}_${index}" onpointerdown="setMovePointer(event);"/>`;
+              }
+            }
+          }
+        }
+
+        // Create black checkers on the left side
+        createCheckers('left', 'black', 'p_b', BOARD_START_X - (SQUARE_SIZE * 2));
+        // Create white checkers on the right side
+        createCheckers('right', 'white', 'p_w', BOARD_START_X + BOARD_WIDTH + (SQUARE_SIZE * 0.5));
+        document.getElementById("board").innerHTML = board;
+      }
+      //on mouse down, set the moverId and remember original position in case the drop is invalid
+      function setMove(ele) {
+        moverId = ele.id;
+        const mover = document.querySelector(`#${ele.id}`);
+        myX = parseFloat(mover.getAttribute("cx"));
+        myY = parseFloat(mover.getAttribute("cy"));
+        console.log(`myx: ${myX} myy: ${myY}`);
+      }
+
+      // pointer-based start of drag: captures pointer and records origin
+      function setMovePointer(evt) {
+        evt.preventDefault();
+        const ele = evt.target;
+        moverId = ele.id;
+        moverPointerId = evt.pointerId;
+        const mover = ele;
+        myX = parseFloat(mover.getAttribute("cx"));
+        myY = parseFloat(mover.getAttribute("cy"));
+        try {
+          ele.setPointerCapture && ele.setPointerCapture(moverPointerId);
+        } catch (e) {
+          // ignore if not supported
+        }
+      }
+
+      // release/cancel handler for pointercancel
+      function cancelPointer(evt) {
+        if (moverId) {
+          const moverEle = document.querySelector(`#${moverId}`);
+          try {
+            moverEle && moverEle.releasePointerCapture && moverEle.releasePointerCapture(moverPointerId);
+          } catch (e) {}
+          if (moverEle) {
+            moverEle.setAttribute('cx', myX);
+            moverEle.setAttribute('cy', myY);
+          }
+          moverId = undefined;
+          moverPointerId = undefined;
+        }
+      }
+      // convert a mouse event to SVG coordinates
+      function toSvgPoint(evt) {
+        const svg = document.querySelector('svg');
+        const pt = svg.createSVGPoint();
+        pt.x = evt.clientX;
+        pt.y = evt.clientY;
+        const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+        return svgP;
+      }
+      // runs on every mousemove to move the checker being dragged
+      function moveChecker(evt) {
+        if (moverId) {
+          const moverEle = document.querySelector(`#${moverId}`);
+          const p = toSvgPoint(evt);
+          moverEle.setAttribute("cx", p.x);
+          moverEle.setAttribute("cy", p.y);
+        }
+      }
+
+      function releaseChecker(evt) {
+        if (moverId) {
+          const p = toSvgPoint(evt);
+          const hit = checkHit(p.x, p.y);
+          const moverEle = document.querySelector(`#${moverId}`);
+          if (hit) {
+            // snap to center of target
+            moverEle.setAttribute('cx', hit.cx);
+            moverEle.setAttribute('cy', hit.cy);
+            try { moverEle.releasePointerCapture && moverEle.releasePointerCapture(moverPointerId); } catch (e) {}
+            moverId = undefined;
+            moverPointerId = undefined;
+          } else {
+            // if not on a square, return to original position, clear stuff
+            moverEle.setAttribute(`cx`, myX);
+            moverEle.setAttribute(`cy`, myY);
+            try { moverEle.releasePointerCapture && moverEle.releasePointerCapture(moverPointerId); } catch (e) {}
+            moverId = undefined;
+            moverPointerId = undefined;
+          }
+        }
+      }
+
+      // return {cx, cy, row, col} if hit, otherwise null
+      function checkHit(x, y) {
+        document.querySelector(`#output`).textContent = `drop coords: ${x}, ${y}`;
+        for (let i = 0; i < ROWS; i++) {
+          for (let j = 0; j < COLS; j++) {
+            const target = document.querySelector(`#target_${i}${j}`);
+            if (!target) continue;
+            const drop = target.getBBox();
+            document.querySelector(`#output2`).textContent = `target coords: ${drop.x}, ${drop.y}, ${drop.width}, ${drop.height}`;
+            if (x > drop.x && x < (drop.x + drop.width) && y > drop.y && y < (drop.y + drop.height)) {
+              return { cx: drop.x + drop.width / 2, cy: drop.y + drop.height / 2, row: i, col: j };
+            }
+          }
+        }
+        return null;
+      }
+    </script>
+  </head>
+  <body>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      viewBox="0 0 1200 800"
+      preserveAspectRatio="xMidYMid meet"
+      onload="init( evt );"
+    >
+      <defs>
+      </defs>
+      <rect fill="grey" height="100%" width="100%" />
+
+      <text x="20" y="30" id="whichPlayer" fill="white">You are:</text>
+      <text x="20" y="60" id="output" fill="white">drop coords</text>
+      <text x="20" y="90" id="output2" fill="white">target coords</text>
+
+      <g id="board"></g>
+    </svg>
+  </body>
+</html>
