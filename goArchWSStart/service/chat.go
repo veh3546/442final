@@ -86,7 +86,9 @@ func (h *ChatHub) Run() {
 			ctx := context.Background()
 			msgs, err := data_access.GetMessages(ctx, 100)
 			if err == nil {
-				for _, dm := range msgs {
+				// DB returns messages newest-first; send them oldest-first to clients
+				for i := len(msgs) - 1; i >= 0; i-- {
+					dm := msgs[i]
 					sm := ChatMessage{
 						Account_Token: dm.Account_Token,
 						Username:      dm.Username,
@@ -168,6 +170,17 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Capture session info from the initial HTTP request so we can attach
+	// username/account token to messages sent over this WebSocket.
+	var sessToken string
+	var sessUser string
+	if c, err := r.Cookie("session"); err == nil {
+		sessToken = c.Value
+		if u, ok := lookupSession(sessToken); ok {
+			sessUser = u
+		}
+	}
+
 	Hub.register <- conn
 
 	// The defer keyword delays execution of the function until the surrounding
@@ -186,6 +199,17 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 				log.Printf("WebSocket error: %v", err)
 			}
 			break
+		}
+
+		// Enrich message with server-side session info if available.
+		if sessUser != "" {
+			msg.Username = sessUser
+		}
+		if sessToken != "" {
+			msg.Account_Token = sessToken
+		}
+		if msg.Time == "" {
+			msg.Time = time.Now().Format(time.RFC3339)
 		}
 
 		Hub.broadcast <- msg
