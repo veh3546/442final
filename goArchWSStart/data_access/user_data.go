@@ -18,7 +18,7 @@ var (
 func CreateUser(username, password string) error {
 	// Store the provided password value as-is. Caller is responsible for hashing.
 	if DB != nil {
-		result, err := DB.Exec("INSERT INTO `442Account` (Username, Password_Hashed) VALUES (?, ?)", username, password)
+		result, err := DB.Exec("INSERT INTO `442Account` (Username, Password_Hashed, Account_Token) VALUES (?, ?, NULL)", username, password)
 		if err == nil {
 			rows, _ := result.RowsAffected()
 			fmt.Printf("CreateUser: inserted %d rows for %s into DB\n", rows, username)
