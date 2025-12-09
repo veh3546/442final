@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
-	"time"
+
+	"checkers/data_access"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // In-memory session store: maps session token -> username
@@ -32,15 +35,31 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		// Simple validation: require non-empty username (in production, check against DB)
-		if username == "" && password == "" {
-			http.Error(w, "Username and password required", http.StatusBadRequest)
+		// Require non-empty username and password
+		if username == "" || password == "" {
+			http.Error(w, "username and password required", http.StatusBadRequest)
 			return
 		}
 
-		// Create a session token and store mapping
-		token := fmt.Sprintf("session-%d", time.Now().UnixNano())
+		// Verify credentials using stored hashed password
+		if storedHash, ok := data_access.GetUser(username); ok {
+			if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password)); err != nil {
+				http.Error(w, "invalid username or password", http.StatusUnauthorized)
+				return
+			}
+		} else {
+			http.Error(w, "invalid username or password", http.StatusUnauthorized)
+			return
+		}
+
+		// Create a secure session token and store mapping (base64url, fits VARCHAR(50))
+		token := genRandomBase64URL(32) // 32 bytes => 44 base64url chars
 		storeSession(token, username)
+
+		// Persist token to account table (best-effort)
+		if err := data_access.SetAccountToken(username, token); err != nil {
+			fmt.Printf("warning: failed to persist account token for %s: %v\n", username, err)
+		}
 
 		// Set session cookie (HttpOnly for security)
 		http.SetCookie(w, &http.Cookie{
@@ -85,7 +104,14 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err == nil && cookie.Value != "" {
-		// Remove from server-side session store
+		// Lookup username for this session, then remove from session store
+		if username, ok := lookupSession(cookie.Value); ok {
+			// Best-effort: clear persisted account token
+			if err := data_access.ClearAccountToken(username); err != nil {
+				fmt.Printf("warning: failed to clear account token for %s: %v\n", username, err)
+			}
+		}
+
 		sessionsMu.Lock()
 		delete(sessions, cookie.Value)
 		sessionsMu.Unlock()

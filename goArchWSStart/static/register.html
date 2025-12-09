@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register — Othello Lobby</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body>
+    <main class="login-box">
+      <h1>Create account</h1>
+      <p>Create a new account to join the lobby.</p>
+      <form id="register-form" method="POST" action="/register">
+        <div class="login-row">
+          <label for="username">Display name</label>
+          <input id="username" name="username" placeholder="username" />
+        </div>
+        <div class="login-row">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="password" />
+        </div>
+        <!-- reg_token will be injected by server when serving this page -->
+        <input type="hidden" id="reg_token" name="reg_token" value="{{TOKEN}}" />
+        <div class="login-actions">
+          <button type="submit">Register</button>
+          <a href="/login" style="align-self:center; padding:8px 12px; text-decoration:none; background:#eee; border-radius:4px;">Back</a>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

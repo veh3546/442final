@@ -38,6 +38,7 @@ func main() {
 
 	// Public endpoints (login, root)
 	mux.HandleFunc("/login", service.LoginHandler)
+	mux.HandleFunc("/register", service.RegisterHandler)
 
 	// Protected endpoints (require session)
 	mux.HandleFunc("/lobby", service.LobbyHandler)
