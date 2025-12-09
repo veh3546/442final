@@ -18,12 +18,19 @@ var (
 func CreateUser(username, password string) error {
 	// Store the provided password value as-is. Caller is responsible for hashing.
 	if DB != nil {
-		if _, err := DB.Exec("INSERT INTO `442Acoount` (Username, Password_Hashed) VALUES (?, ?)", username, password); err == nil {
+		result, err := DB.Exec("INSERT INTO `442Acoount` (Username, Password_Hashed) VALUES (?, ?)", username, password)
+		if err == nil {
+			rows, _ := result.RowsAffected()
+			fmt.Printf("CreateUser: inserted %d rows for %s into DB\n", rows, username)
 			return nil
 		}
-		// fallthrough to in-memory on DB error
+		// Log DB error but don't fall back to in-memory; fail the request
+		fmt.Printf("CreateUser: DB error for %s: %v\n", username, err)
+		return fmt.Errorf("database insert failed: %v", err)
 	}
 
+	// DB not configured; use in-memory fallback
+	fmt.Printf("CreateUser: DB not available, using in-memory fallback for %s\n", username)
 	usersMu.Lock()
 	defer usersMu.Unlock()
 	if _, ok := inMemUsers[username]; ok {
@@ -55,12 +62,22 @@ func GetUser(username string) (string, bool) {
 // It attempts to update the DB first; on DB errors it falls back to an in-memory map.
 func SetAccountToken(username, token string) error {
 	if DB != nil {
-		if _, err := DB.Exec("UPDATE `442Acoount` SET Account_Token = ? WHERE Username = ?", token, username); err == nil {
+		result, err := DB.Exec("UPDATE `442Acoount` SET Account_Token = ? WHERE Username = ?", token, username)
+		if err == nil {
+			rows, _ := result.RowsAffected()
+			fmt.Printf("SetAccountToken: updated %d rows for %s with token\n", rows, username)
+			if rows == 0 {
+				fmt.Printf("SetAccountToken: warning - no rows updated for user %s (user may not exist in DB)\n", username)
+			}
 			return nil
 		}
-		// fallthrough to in-memory on DB error
+		// Log DB error but fail the request instead of silently falling back
+		fmt.Printf("SetAccountToken: DB error for %s: %v\n", username, err)
+		return fmt.Errorf("database update failed: %v", err)
 	}
 
+	// DB not configured; use in-memory fallback
+	fmt.Printf("SetAccountToken: DB not available, using in-memory fallback for %s\n", username)
 	tokensMu.Lock()
 	defer tokensMu.Unlock()
 	// Remove any existing token for this user
@@ -79,8 +96,12 @@ func GetUsernameByToken(token string) (string, bool) {
 		row := DB.QueryRow("SELECT Username FROM `442Acoount` WHERE Account_Token = ?", token)
 		if err := row.Scan(&username); err == nil {
 			return username, true
-		} else if err != sql.ErrNoRows {
-			// DB error: fall back to in-memory
+		} else if err == sql.ErrNoRows {
+			// Token not found in DB; fall back to in-memory
+			fmt.Printf("GetUsernameByToken: token not found in DB, checking in-memory\n")
+		} else {
+			// DB error: log and fall back to in-memory
+			fmt.Printf("GetUsernameByToken: DB error: %v\n", err)
 		}
 	}
 
