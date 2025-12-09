@@ -271,6 +271,58 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 		Hub.broadcast <- msg
 	}
 }
+func UserListHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("WebSocket upgrade error: %v", err)
+		return
+	}
+
+	// Capture session info from the initial HTTP request so we can attach
+	// username/account token to messages sent over this WebSocket.
+	var sessToken string
+	var sessUser string
+	if c, err := r.Cookie("session"); err == nil {
+		sessToken = c.Value
+		if u, ok := lookupSession(sessToken); ok {
+			sessUser = u
+		}
+	}
+
+	Hub.register <- conn
+
+	// The defer keyword delays execution of the function until the surrounding
+	// function (ChatHandler) returns. Here, it ensures that the client is
+	// unregistered from the hub when this function exits (e.g., on error or close)
+	// and that resources are cleaned up.
+	defer func() {
+		Hub.unregister <- conn
+	}()
+
+	for {
+		var msg ChatMessage
+		err := conn.ReadJSON(&msg)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("WebSocket error: %v", err)
+			}
+			break
+		}
+
+		// Enrich message with server-side session info if available.
+		if sessUser != "" {
+			msg.Username = sessUser
+		}
+		if sessToken != "" {
+			msg.Account_Token = sessToken
+		}
+		if msg.Time == "" {
+			msg.Time = time.Now().Format(time.RFC3339)
+		}
+
+		Hub.broadcast <- msg
+	}
+}
 
 // GetChatHistoryHandler returns the current in-memory message history as JSON.
 // This can be useful for non-WebSocket clients or debugging.
