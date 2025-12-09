@@ -46,6 +46,7 @@ type ChatHub struct {
 	register   chan *websocket.Conn
 	unregister chan *websocket.Conn
 	messages   []ChatMessage
+	users      []User
 	mu         sync.RWMutex
 }
 
@@ -56,6 +57,7 @@ var Hub = &ChatHub{
 	register:   make(chan *websocket.Conn),
 	unregister: make(chan *websocket.Conn),
 	messages:   make([]ChatMessage, 0),
+	users:      make([]User, 0),
 }
 
 // Run is the event loop for the hub. It should be started once (e.g., in main)
@@ -152,6 +154,60 @@ func (h *ChatHub) Run() {
 				}
 			}
 			h.mu.RUnlock()
+		}
+	}
+}
+
+func (h *UserHub) Run() {
+	for {
+		select {
+
+		// A new client has connected.
+		//
+		// h.register is a channel of *websocket.Conn values; this of it as a message queue.
+		// The left arrow means to dequeue a value from that channel when one is available.
+		// In this case, it means that a new client has connected.
+		case client := <-h.register:
+			// The Go Mutex lock ensures that the clients map is safely modified.
+			h.mu.Lock()
+			h.clients[client] = true
+			// Release the Mutex lock after modification.
+			h.mu.Unlock()
+
+			// Send chat history to the new client. Try DB first, fall back to in-memory.
+			usrs, err := data_access.GetOnlineUsers()
+			if err == nil {
+				// DB returns messages newest-first; send them oldest-first to clients
+				for i := len(usrs) - 1; i >= 0; i-- {
+					dm := usrs[i]
+					sm := User{
+						Account_Token: dm.Account_Token,
+						Username:      dm.Username,
+					}
+					if err := client.WriteJSON(sm); err != nil {
+						log.Printf("Error sending history: %v", err)
+					}
+				}
+			} else {
+				h.mu.RLock()
+				for _, msg := range h.users {
+					if err := client.WriteJSON(msg); err != nil {
+						log.Printf("Error sending history: %v", err)
+					}
+				}
+				h.mu.RUnlock()
+			}
+
+		// A client disconnected or errored.
+		//
+		// Remove the client from the hub and close the connection.
+		case client := <-h.unregister:
+			h.mu.Lock()
+			if _, ok := h.clients[client]; ok {
+				delete(h.clients, client)
+				client.Close()
+			}
+			h.mu.Unlock()
 		}
 	}
 }

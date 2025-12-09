@@ -6,6 +6,12 @@ import (
 	"sync"
 )
 
+// User represents a row in the user table.
+type User struct {
+	Account_Token string
+	Username      string
+}
+
 var (
 	usersMu     sync.RWMutex
 	inMemUsers  = make(map[string]string)
@@ -56,6 +62,26 @@ func GetUser(username string) (string, bool) {
 	defer usersMu.RUnlock()
 	p, ok := inMemUsers[username]
 	return p, ok
+}
+
+// GetOnlineUsers returns a list of User structs that currently have a session token set.
+func GetOnlineUsers() ([]User, error) {
+	if DB == nil {
+		return nil, sql.ErrConnDone
+	}
+
+	row := DB.QueryRow("SELECT Username FROM `442Account` WHERE Account_Token IS NOT NULL")
+
+	var out []User
+	var m User
+	if err := row.Scan(&m.Account_Token, &m.Username); err != nil {
+		return nil, err
+	}
+	out = append(out, m)
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // OnlineUsers returns a list of usernames that currently have a session token set.

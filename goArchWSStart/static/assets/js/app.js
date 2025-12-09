@@ -72,6 +72,9 @@ function connectWebSocket() {
         console.log(`WebSocket`, event);
         const message = JSON.parse(event.data);
         displayMessage(message);
+        if (message.type === 'userList') {
+            displayOnlineUsers(message.users);
+        }
     };
     
 }
@@ -81,7 +84,7 @@ function displayOnlineUsers(users) {
     userListEl.innerHTML = '';
     users.forEach(user => {
         const li = document.createElement('li');
-        li.textContent = user;
+        li.textContent = user.username;
         userListEl.appendChild(li);
     });
 }
