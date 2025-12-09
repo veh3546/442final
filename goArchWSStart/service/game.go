@@ -4,14 +4,22 @@ import (
 	"net/http"
 
 	"checkers/business_logic"
+	"checkers/data_access"
 )
 
 func GetTurnHandler(w http.ResponseWriter, r *http.Request) {
-	turn := business_logic.GetCurrentTurn()
+	// Service orchestrates: fetch current turn from data access
+	turn := data_access.GetTurn()
 	jsonResponse(w, http.StatusOK, map[string]string{"currentTurn": turn})
 }
 
 func NextTurnHandler(w http.ResponseWriter, r *http.Request) {
-	next := business_logic.AdvanceTurn()
+	// Service orchestrates: validate business rules, then update data
+	if err := business_logic.ValidateTurnTransition(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	next := data_access.NextTurn()
 	jsonResponse(w, http.StatusOK, map[string]string{"nextTurn": next})
 }

@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"sync"
 
+	"checkers/business_logic"
 	"checkers/data_access"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 // In-memory session store: maps session token -> username
@@ -41,19 +40,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Verify credentials using stored hashed password
-		if storedHash, ok := data_access.GetUser(username); ok {
-			if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password)); err != nil {
-				http.Error(w, "invalid username or password", http.StatusUnauthorized)
-				return
-			}
-		} else {
+		// Verify credentials using business logic
+		valid, err := business_logic.VerifyCredentials(username, password)
+		if err != nil || !valid {
 			http.Error(w, "invalid username or password", http.StatusUnauthorized)
 			return
 		}
 
 		// Create a secure session token and store mapping (base64url, fits VARCHAR(50))
-		token := genRandomBase64URL(32) // 32 bytes => 44 base64url chars
+		token := business_logic.GenerateSessionToken()
 		storeSession(token, username)
 
 		// Persist token to account table (best-effort)

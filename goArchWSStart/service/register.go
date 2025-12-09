@@ -8,9 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"checkers/business_logic"
 	"checkers/data_access"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type regInfo struct {
@@ -41,7 +40,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		// generate token and store associated info
-		token := genRandomHex(16)
+		token := business_logic.GenerateRegistrationToken()
 		info := regInfo{
 			IP:      clientIP(r),
 			UA:      r.Header.Get("User-Agent"),
@@ -95,18 +94,18 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Validate password and hash it before storing
-		if len(password) < 6 {
-			http.Error(w, "password must be at least 6 characters", http.StatusBadRequest)
+		if err := business_logic.ValidatePassword(password); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		hashed, err := business_logic.HashPassword(password)
 		if err != nil {
 			http.Error(w, "could not process password", http.StatusInternalServerError)
 			return
 		}
 
 		// Create user (DB or in-memory fallback). Pass the hashed password to storage.
-		if err := data_access.CreateUser(username, string(hashed)); err != nil {
+		if err := data_access.CreateUser(username, hashed); err != nil {
 			http.Error(w, fmt.Sprintf("could not create user: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -116,8 +115,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		delete(regTokens, token)
 		regMu.Unlock()
 
-		// Create session and sign in user (base64url to fit VARCHAR(50))
-		sess := genRandomBase64URL(32) // 32 bytes => 44 base64url chars
+		// Create session and sign in user using business logic
+		sess := business_logic.GenerateSessionToken()
 		storeSession(sess, username)
 
 		// Persist token to account table (best-effort)
