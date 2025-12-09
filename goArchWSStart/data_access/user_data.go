@@ -58,6 +58,27 @@ func GetUser(username string) (string, bool) {
 	return p, ok
 }
 
+// OnlineUsers returns a list of usernames that currently have a session token set.
+func OnlineUsers() ([]string, error) {
+	if DB != nil {
+		var users []string
+		row := DB.QueryRow("SELECT Username FROM `442Account` WHERE Account_Token IS NOT NULL")
+		if err := row.Scan(&users); err == nil {
+			return users, nil
+		} else if err != sql.ErrNoRows {
+			// If some DB error occurred, fall back to in-memory
+		}
+	}
+
+	usersMu.RLock()
+	defer usersMu.RUnlock()
+	var users []string
+	for u := range inMemUsers {
+		users = append(users, u)
+	}
+	return users, nil
+}
+
 // SetAccountToken saves the session token for a username. Caller provides the token string.
 // It attempts to update the DB first; on DB errors it falls back to an in-memory map.
 func SetAccountToken(username, token string) error {

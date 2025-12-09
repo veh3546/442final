@@ -75,7 +75,16 @@ function connectWebSocket() {
     };
     
 }
-
+function displayOnlineUsers(users) {
+    const userListEl = document.getElementById('user-list');
+    if (!userListEl) return;
+    userListEl.innerHTML = '';
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.textContent = user;
+        userListEl.appendChild(li);
+    });
+}
 function displayMessage(message) {
     const chatContent = document.getElementById(`chat-content`),
                     timeText = new Date(message.time).toLocaleTimeString(`en-US`, { hour12: false });

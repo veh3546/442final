@@ -128,3 +128,12 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	// Serve the lobby HTML file from static directory
 	http.ServeFile(w, r, "./static/index.html")
 }
+
+func ListHandler(w http.ResponseWriter, r *http.Request) {
+	users, err := business_logic.ListUsers()
+	if err != nil {
+		http.Error(w, "could not retrieve user list", http.StatusInternalServerError)
+		return
+	}
+	jsonResponse(w, http.StatusOK, map[string][]string{"users": users})
+}
