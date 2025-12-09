@@ -18,7 +18,7 @@ var (
 func CreateUser(username, password string) error {
 	// Store the provided password value as-is. Caller is responsible for hashing.
 	if DB != nil {
-		result, err := DB.Exec("INSERT INTO `442Acoount` (Username, Password_Hashed) VALUES (?, ?)", username, password)
+		result, err := DB.Exec("INSERT INTO `442Account` (Username, Password_Hashed) VALUES (?, ?)", username, password)
 		if err == nil {
 			rows, _ := result.RowsAffected()
 			fmt.Printf("CreateUser: inserted %d rows for %s into DB\n", rows, username)
@@ -44,7 +44,7 @@ func CreateUser(username, password string) error {
 func GetUser(username string) (string, bool) {
 	if DB != nil {
 		var pass string
-		row := DB.QueryRow("SELECT Password_Hashed FROM `442Acoount` WHERE Username = ?", username)
+		row := DB.QueryRow("SELECT Password_Hashed FROM `442Account` WHERE Username = ?", username)
 		if err := row.Scan(&pass); err == nil {
 			return pass, true
 		} else if err != sql.ErrNoRows {
@@ -62,7 +62,7 @@ func GetUser(username string) (string, bool) {
 // It attempts to update the DB first; on DB errors it falls back to an in-memory map.
 func SetAccountToken(username, token string) error {
 	if DB != nil {
-		result, err := DB.Exec("UPDATE `442Acoount` SET Account_Token = ? WHERE Username = ?", token, username)
+		result, err := DB.Exec("UPDATE `442Account` SET Account_Token = ? WHERE Username = ?", token, username)
 		if err == nil {
 			rows, _ := result.RowsAffected()
 			fmt.Printf("SetAccountToken: updated %d rows for %s with token\n", rows, username)
@@ -93,7 +93,7 @@ func SetAccountToken(username, token string) error {
 func GetUsernameByToken(token string) (string, bool) {
 	if DB != nil {
 		var username string
-		row := DB.QueryRow("SELECT Username FROM `442Acoount` WHERE Account_Token = ?", token)
+		row := DB.QueryRow("SELECT Username FROM `442Account` WHERE Account_Token = ?", token)
 		if err := row.Scan(&username); err == nil {
 			return username, true
 		} else if err == sql.ErrNoRows {
@@ -114,7 +114,7 @@ func GetUsernameByToken(token string) (string, bool) {
 // ClearAccountToken removes the stored token for a username (logout).
 func ClearAccountToken(username string) error {
 	if DB != nil {
-		if _, err := DB.Exec("UPDATE `442Acoount` SET Account_Token = NULL WHERE Username = ?", username); err == nil {
+		if _, err := DB.Exec("UPDATE `442Account` SET Account_Token = NULL WHERE Username = ?", username); err == nil {
 			return nil
 		}
 		// fallthrough to in-memory on DB error
