@@ -48,13 +48,13 @@ func GetMessages(ctx context.Context, limit int) ([]ChatMessage, error) {
 }
 
 // InsertMessage inserts a new chat message and returns the inserted ID.
-func InsertMessage(ctx context.Context, accountToken, username, message string, chatDate string) (int64, error) {
+func InsertMessage(ctx context.Context, accountToken, username, message string) (int64, error) {
 	if DB == nil {
 		return 0, sql.ErrConnDone
 	}
 	res, err := DB.ExecContext(ctx,
-		`INSERT INTO 442Chat (account_token, username, message, chat_date) VALUES (?, ?, ?, ?)`,
-		accountToken, username, message, time.Now().UTC())
+		`INSERT INTO 442Chat (account_token, username, message) VALUES (?, ?, ?)`,
+		accountToken, username, message)
 	if err != nil {
 		return 0, err
 	}
