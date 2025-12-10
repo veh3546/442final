@@ -138,7 +138,7 @@ func (h *ChatHub) Run() {
 			go func(m ChatMessage) {
 				ctx := context.Background()
 				// convert time if provided, otherwise DB will set timestamp
-				if _, err := data_access.InsertMessage(ctx, m.Account_Token, m.Username, m.Message); err != nil {
+				if _, err := data_access.InsertMessage(ctx, m.Account_Token, m.Username, m.Message, m.Time); err != nil {
 					log.Printf("Error inserting chat message: %v", err)
 				}
 			}(message)

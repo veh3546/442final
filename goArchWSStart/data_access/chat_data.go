@@ -48,13 +48,13 @@ func GetMessages(ctx context.Context, limit int) ([]ChatMessage, error) {
 }
 
 // InsertMessage inserts a new chat message and returns the inserted ID.
-func InsertMessage(ctx context.Context, accountToken, username, message string) (int64, error) {
+func InsertMessage(ctx context.Context, accountToken, username, message string, chatDate string) (int64, error) {
 	if DB == nil {
 		return 0, sql.ErrConnDone
 	}
 	res, err := DB.ExecContext(ctx,
 		`INSERT INTO 442Chat (account_token, username, message, chat_date) VALUES (?, ?, ?, ?)`,
-		accountToken, username, message, time.Now())
+		accountToken, username, message, chatDate)
 	if err != nil {
 		return 0, err
 	}
@@ -62,7 +62,7 @@ func InsertMessage(ctx context.Context, accountToken, username, message string) 
 }
 
 // UpdateMessage updates the text of an existing message.
-func UpdateMessageByAccountAndDate(ctx context.Context, accountToken string, chatDate time.Time, newText string) error {
+func UpdateMessageByAccountAndDate(ctx context.Context, accountToken string, chatDate string, newText string) error {
 	if DB == nil {
 		return sql.ErrConnDone
 	}
@@ -71,7 +71,7 @@ func UpdateMessageByAccountAndDate(ctx context.Context, accountToken string, cha
 }
 
 // DeleteMessage removes a message by id.
-func DeleteMessageByAccountAndDate(ctx context.Context, accountToken string, chatDate time.Time) error {
+func DeleteMessageByAccountAndDate(ctx context.Context, accountToken string, chatDate string) error {
 	if DB == nil {
 		return sql.ErrConnDone
 	}
