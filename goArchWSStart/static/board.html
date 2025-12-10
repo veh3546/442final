@@ -38,12 +38,14 @@
         moverId, //keeps track of what I'm dragging
         moverPointerId, //keep track of the active pointer for the drag
         myX,
-        myY;
+        myY,
+        ws; // websocket connection
       const ROWS = 8,
         COLS = 8;
 
       function init() {
         drawBoard();
+        connectWebSocket(); // Connect to websocket for real-time updates
         const svg = document.querySelector("svg");
         svg.addEventListener("pointermove", moveChecker);
         svg.addEventListener("pointerup", releaseChecker);
@@ -197,9 +199,29 @@
           const hit = checkHit(p.x, p.y);
           const moverEle = document.querySelector(`#${moverId}`);
           if (hit) {
-            // snap to center of target
-            moverEle.setAttribute("cx", hit.cx);
-            moverEle.setAttribute("cy", hit.cy);
+            // Send move to server
+            fetch('/move', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                row: hit.row,
+                col: hit.col,
+                player: player
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('Move accepted:', data);
+            })
+            .catch(error => {
+              console.error('Error sending move:', error);
+              // Return to original position on error
+              moverEle.setAttribute(`cx`, myX);
+              moverEle.setAttribute(`cy`, myY);
+            });
+
             try {
               moverEle.releasePointerCapture &&
                 moverEle.releasePointerCapture(moverPointerId);
@@ -249,6 +271,69 @@
           }
         }
         return null;
+      }
+
+      // Connect to websocket for real-time updates
+      function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/game`;
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = function(event) {
+          console.log('WebSocket connected');
+        };
+
+        ws.onmessage = function(event) {
+          try {
+            const update = JSON.parse(event.data);
+            updateBoard(update.board);
+            console.log('Board updated:', update);
+          } catch (error) {
+            console.error('Error parsing websocket message:', error);
+          }
+        };
+
+        ws.onclose = function(event) {
+          console.log('WebSocket disconnected');
+          // Attempt to reconnect after 5 seconds
+          setTimeout(connectWebSocket, 5000);
+        };
+
+        ws.onerror = function(error) {
+          console.error('WebSocket error:', error);
+        };
+      }
+
+      // Update the board display with new board state
+      function updateBoard(board) {
+        // Clear existing pieces (except center pieces which are static)
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            if (board[r][c] && board[r][c] !== '') {
+              // Only update if there's a piece and it's not a center piece
+              if (!((r === 3 && c === 3) || (r === 3 && c === 4) || (r === 4 && c === 3) || (r === 4 && c === 4))) {
+                const cx = BOARD_START_X + c * SQUARE_SIZE + SQUARE_SIZE / 2;
+                const cy = BOARD_START_Y + r * SQUARE_SIZE + SQUARE_SIZE / 2;
+                const pieceId = `p_${r}${c}`;
+                let piece = document.getElementById(pieceId);
+                if (!piece) {
+                  // Create new piece if it doesn't exist
+                  piece = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                  piece.setAttribute('id', pieceId);
+                  piece.setAttribute('r', CHECKER_RADIUS);
+                  piece.setAttribute('cx', cx);
+                  piece.setAttribute('cy', cy);
+                  piece.setAttribute('class', board[r][c]);
+                  document.getElementById('board').appendChild(piece);
+                } else {
+                  // Update existing piece
+                  piece.setAttribute('class', board[r][c]);
+                }
+              }
+            }
+          }
+        }
       }
     </script>
   </head>
