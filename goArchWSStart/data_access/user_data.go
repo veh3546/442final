@@ -73,11 +73,11 @@ func GetOnlineUsers() ([]User, error) {
 	row := DB.QueryRow("SELECT Username FROM `442Account` WHERE Account_Token IS NOT NULL")
 
 	var out []User
-	var u User
-	if err := row.Scan(&u.Account_Token, &u.Username); err != nil {
+	var m User
+	if err := row.Scan(&m.Account_Token, &m.Username); err != nil {
 		return nil, err
 	}
-	out = append(out, u)
+	out = append(out, m)
 	if err := row.Err(); err != nil {
 		return nil, err
 	}
@@ -85,9 +85,9 @@ func GetOnlineUsers() ([]User, error) {
 }
 
 // OnlineUsers returns a list of usernames that currently have a session token set.
-func OnlineUsers() ([]User, error) {
+func OnlineUsers() ([]string, error) {
 	if DB != nil {
-		var users []User
+		var users []string
 		row := DB.QueryRow("SELECT Username FROM `442Account` WHERE Account_Token IS NOT NULL")
 		if err := row.Scan(&users); err == nil {
 			return users, nil
@@ -95,7 +95,14 @@ func OnlineUsers() ([]User, error) {
 			// If some DB error occurred, fall back to in-memory
 		}
 	}
-	return nil, sql.ErrConnDone
+
+	usersMu.RLock()
+	defer usersMu.RUnlock()
+	var users []string
+	for u := range inMemUsers {
+		users = append(users, u)
+	}
+	return users, nil
 }
 
 // SetAccountToken saves the session token for a username. Caller provides the token string.
