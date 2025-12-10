@@ -54,7 +54,7 @@ func InsertMessage(ctx context.Context, accountToken, username, message string) 
 	}
 	res, err := DB.ExecContext(ctx,
 		`INSERT INTO 442Chat (account_token, username, message, chat_date) VALUES (?, ?, ?, ?)`,
-		accountToken, username, message, time.Now())
+		accountToken, username, message, time.Now().UTC())
 	if err != nil {
 		return 0, err
 	}

@@ -265,7 +265,7 @@ func ChatHandler(w http.ResponseWriter, r *http.Request) {
 			msg.Account_Token = sessToken
 		}
 		if msg.Time == "" {
-			msg.Time = time.Now().Format(time.RFC3339)
+			msg.Time = time.Now().UTC().Format(time.RFC3339)
 		}
 
 		Hub.broadcast <- msg
@@ -317,7 +317,7 @@ func UserListHandler(w http.ResponseWriter, r *http.Request) {
 			msg.Account_Token = sessToken
 		}
 		if msg.Time == "" {
-			msg.Time = time.Now().Format(time.RFC3339)
+			msg.Time = time.Now().UTC().Format(time.RFC3339)
 		}
 
 		Hub.broadcast <- msg
