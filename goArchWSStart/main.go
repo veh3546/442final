@@ -1,11 +1,11 @@
 package main
 
 import (
-	"checkers/data_access"
-	"checkers/service"
 	"log"
 	"net/http"
 	"os"
+	"othello/data_access"
+	"othello/service"
 
 	"github.com/joho/godotenv"
 )

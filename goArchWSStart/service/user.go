@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"sync"
 
-	"checkers/business_logic"
-	"checkers/data_access"
+	"othello/business_logic"
+	"othello/data_access"
 )
 
 // In-memory session store: maps session token -> username

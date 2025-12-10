@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"checkers/business_logic"
-	"checkers/data_access"
+	"othello/business_logic"
+	"othello/data_access"
 )
 
 func GetTurnHandler(w http.ResponseWriter, r *http.Request) {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"checkers/data_access"
+	"othello/data_access"
 )
 
 // SessionMiddleware ensures that requests have a non-empty 'session' cookie

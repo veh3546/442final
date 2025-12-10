@@ -1,7 +1,7 @@
 package business_logic
 
 import (
-	"checkers/data_access"
+	"othello/data_access"
 
 	"golang.org/x/crypto/bcrypt"
 )

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"checkers/data_access"
+	"othello/data_access"
 
 	"github.com/gorilla/websocket"
 )

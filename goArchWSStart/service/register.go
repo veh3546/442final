@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"checkers/business_logic"
-	"checkers/data_access"
+	"othello/business_logic"
+	"othello/data_access"
 )
 
 type regInfo struct {

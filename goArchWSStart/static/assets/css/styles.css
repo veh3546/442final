@@ -104,7 +104,7 @@ body {
   height: 100%;
 }
 
-button {
+button, .button {
 	margin-top: 10px;
 	padding: 8px 14px;
 	font-size: 14px;

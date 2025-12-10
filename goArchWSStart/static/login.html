@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Login — Othello Lobby</title>
+    <title>Login for Othello</title>
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <style>
       .login-box {
@@ -35,14 +35,14 @@
   <body>
     <main class="login-box">
       <h1>Sign in</h1>
-      <p>Enter a display name to join the lobby.</p>
+      <p>Enter your account credentials to join the lobby.</p>
       <form id="login-form" method="POST" action="/login">
         <div class="login-row">
           <label for="username">Display name</label>
           <input id="username" name="username" placeholder="username" />
         </div>
         <div class="login-row">
-          <label for="password">Password (optional)</label>
+          <label for="password">Password</label>
           <input
             id="password"
             name="password"
@@ -52,7 +52,7 @@
         </div>
         <div class="login-actions">
           <button id="login-btn" type="submit">Sign in</button>
-          <a class="button" href="/register" style="align-self:center; padding:8px 12px; text-decoration:none; background:#eee; border-radius:4px;">Register</a>
+          <a class="button" href="/register">Register</a>
         </div>
       </form>
     </main>

@@ -1,4 +1,4 @@
-module checkers
+module othello
 
 go 1.25
 
