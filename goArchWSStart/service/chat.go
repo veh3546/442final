@@ -175,7 +175,7 @@ func (h *UserHub) Run() {
 			h.mu.Unlock()
 
 			// Send chat history to the new client. Try DB first, fall back to in-memory.
-			usrs, err := data_access.GetOnlineUsers()
+			usrs, err := data_access.OnlineUsers()
 			if err == nil {
 				// DB returns messages newest-first; send them oldest-first to clients
 				for i := len(usrs) - 1; i >= 0; i-- {
