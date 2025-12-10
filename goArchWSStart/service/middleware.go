@@ -29,23 +29,34 @@ func SessionMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Validate the session token against persisted Account_Token in DB
-		username, ok := data_access.GetUsernameByToken(cookie.Value)
-		if !ok {
-			fmt.Printf("SessionMiddleware: token not found or invalid for session %s\n", cookie.Value)
+		// Validate the session token - try database first, fall back to in-memory
+		fmt.Printf("SessionMiddleware: checking token %s\n", cookie.Value)
+		username, dbOk := data_access.GetUsernameByToken(cookie.Value)
+		inMemUser, memOk := lookupSession(cookie.Value)
+		fmt.Printf("SessionMiddleware: DB result - username: %s, found: %v\n", username, dbOk)
+		fmt.Printf("SessionMiddleware: Memory result - username: %s, found: %v\n", inMemUser, memOk)
+
+		// If neither database nor in-memory has the token, reject
+		if !dbOk && !memOk {
+			fmt.Printf("SessionMiddleware: token not found in DB or memory for session %s\n", cookie.Value)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error":"invalid or expired session"}`))
 			return
 		}
 
-		// Token is valid; also verify it matches the in-memory session for consistency
-		if inMemUser, ok := lookupSession(cookie.Value); ok && inMemUser != username {
+		// If both are available, ensure they match for consistency
+		if dbOk && memOk && username != inMemUser {
 			fmt.Printf("SessionMiddleware: token mismatch for %s: DB=%s, Memory=%s\n", cookie.Value, username, inMemUser)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"error":"session mismatch"}`))
 			return
+		}
+
+		// Use whichever source has the username
+		if !dbOk && memOk {
+			username = inMemUser
 		}
 
 		// Continue to the underlying handler

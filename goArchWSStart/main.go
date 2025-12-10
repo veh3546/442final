@@ -17,11 +17,14 @@ func main() {
 	}
 
 	// Initialize DB from environment variables (DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME)
+	// Make database connection optional - server can run with in-memory fallback
 	db, err := data_access.NewDB(os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	if err != nil {
-		log.Fatalf("failed to connect to DB: %v", err)
+		log.Printf("failed to connect to DB: %v - falling back to in-memory storage", err)
+	} else {
+		defer db.Close()
+		log.Printf("connected to database successfully")
 	}
-	defer db.Close()
 
 	// start with this, to show serving up static files:
 	/*
