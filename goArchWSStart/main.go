@@ -42,7 +42,6 @@ func main() {
 
 	// Protected endpoints (require session)
 	mux.HandleFunc("/lobby", service.LobbyHandler)
-	mux.HandleFunc("/list", service.ListHandler)
 	mux.HandleFunc("/me", service.MeHandler)
 	mux.HandleFunc("/logout", service.LogoutHandler)
 
