@@ -47,7 +47,7 @@ func main() {
 
 	// Protected API endpoints
 	mux.HandleFunc("/turn", service.GetTurnHandler)
-	// mux.HandleFunc("/next", service.NextTurnHandler)
+	mux.HandleFunc("/next", service.NextTurnHandler)
 	mux.HandleFunc("/ws/chat", service.ChatHandler)
 	mux.HandleFunc("/board", service.BoardHandler)
 

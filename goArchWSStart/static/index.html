@@ -1,66 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8">
     <title>Othello Lobby</title>
-    <link rel="stylesheet" href="/assets/css/styles.css" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
     <div class="container">
-      <main>
-        <h1>
-          Valen's Othello Lobby
-          <span
-            id="who"
-            style="font-size: 14px; margin-left: 12px; color: #444"
-          ></span>
-          <button
-            id="logout-btn"
-            style="margin-left: 12px; padding: 6px 10px; font-size: 13px"
-          >
-            Log out
-          </button>
-        </h1>
-
-        <button id="request-game-btn">Request Game</button>
-        <h2>Players Online:</h2>
-        <ul id="user-list">
-          <!-- User list will be populated here -->
-        </ul>
-      </main>
-
-      <aside class="chat-sidebar">
-        <h2>Lobby Chat</h2>
-        <div id="chat-content" class="chat-content">
-          <!-- Chat messages will appear here -->
-        </div>
-        <div class="chat-input-area">
-          <textarea
-            id="chat-message"
-            placeholder="Type a message..."
-          ></textarea>
-          <button id="send-btn" title="Send message">⌯⌲</button>
-        </div>
-      </aside>
+        <main>
+                        <h1>Valen's Othello Lobby <span id="who" style="font-size:14px;margin-left:12px;color:#444"></span>
+                            <button id="logout-btn" style="margin-left:12px;padding:6px 10px;font-size:13px;">Log out</button>
+                        </h1>
+            <div id="turn">Loading...</div>
+            <button id="next-turn-btn">Next Turn</button>
+            <button id="request-game-btn">Request Game</button>
+            <h2>Players Online:</h2>
+            <ul id="user-list">
+                <!-- User list will be populated here -->
+            </ul>
+        </main>
+        
+        <aside class="chat-sidebar">
+            <h2>Lobby Chat</h2>
+            <div id="chat-content" class="chat-content">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chat-message" placeholder="Type a message..."></textarea>
+                <button id="send-btn" title="Send message">⌯⌲</button>
+            </div>
+        </aside>
     </div>
 
-    <script>
-      // Leave session checks to the client app. Provide a logout button that calls the server.
-      document.addEventListener("DOMContentLoaded", function () {
-        const logoutBtn = document.getElementById("logout-btn");
-        if (!logoutBtn) return;
-        logoutBtn.addEventListener("click", async function () {
-          try {
-            // try POST logout, fallback to GET
-            let res = await fetch("/logout", { method: "POST" });
-            if (!res.ok) res = await fetch("/logout");
-          } catch (e) {
-            console.error("Logout error", e);
-          }
-          window.location.href = "/login";
-        });
-      });
-    </script>
-    <script src="/assets/js/app.js" defer></script>
-  </body>
+        <script>
+            // Leave session checks to the client app. Provide a logout button that calls the server.
+            document.addEventListener('DOMContentLoaded', function(){
+                const logoutBtn = document.getElementById('logout-btn');
+                if (!logoutBtn) return;
+                logoutBtn.addEventListener('click', async function(){
+                    try {
+                        // try POST logout, fallback to GET
+                        let res = await fetch('/logout', { method: 'POST' });
+                        if (!res.ok) res = await fetch('/logout');
+                    } catch (e) {
+                        console.error('Logout error', e);
+                    }
+                    window.location.href = '/login';
+                });
+            });
+        </script>
+        <script src="/assets/js/app.js" defer></script>
+</body>
 </html>
