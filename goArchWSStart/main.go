@@ -33,9 +33,6 @@ func main() {
 	// Start the chat hub as a background goroutine
 	go service.Hub.Run()
 
-	// Start the game hub as a background goroutine
-	go service.GameHubInstance.Run()
-
 	// a mux (multiplexer) routes incoming requests to their respective handlers
 	mux := http.NewServeMux()
 
@@ -52,8 +49,6 @@ func main() {
 	mux.HandleFunc("/turn", service.GetTurnHandler)
 	mux.HandleFunc("/next", service.NextTurnHandler)
 	mux.HandleFunc("/ws/chat", service.ChatHandler)
-	mux.HandleFunc("/ws/game", service.GameWSHandler)
-	mux.HandleFunc("/move", service.MoveHandler)
 	mux.HandleFunc("/board", service.BoardHandler)
 
 	// Root (/) serves login page
