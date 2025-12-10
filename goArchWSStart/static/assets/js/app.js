@@ -44,13 +44,13 @@ async function fetchTurn() {
           data = await res.json();
     document.getElementById(`turn`).textContent = data.currentTurn;
 }
-
+/*
 async function nextTurn() {
     const res = await fetch(`/next`),
           data = await res.json();
     document.getElementById(`turn`).textContent = data.nextTurn;
 }
-
+**/
 let USERNAME = null; // will be fetched from server session
 let ws;
 
