@@ -35,6 +35,10 @@ async function guestLogin() {
     await login();
 }
 
+async function getBoard() {
+window.location.href = '/board';
+            return;}
+
 async function fetchTurn() {
     const res = await fetch(`/turn`),
           data = await res.json();
@@ -121,9 +125,12 @@ document.addEventListener(`DOMContentLoaded`, () => {
     // wire up login page buttons if present
     const loginBtn = document.getElementById('login-btn');
     const guestBtn = document.getElementById('guest-btn');
+    const requestBtn = document.getElementById('request-game-btn');
+
     if (loginBtn) loginBtn.addEventListener('click', (e) => { e.preventDefault(); login(); });
     if (guestBtn) guestBtn.addEventListener('click', (e) => { e.preventDefault(); guestLogin(); });
-    
+    if (requestBtn) requestBtn.addEventListener('click', (e) => { e.preventDefault(); getBoard(); });
+
     // Chat functionality
     const sendBtn = document.getElementById(`send-btn`),
           messageInput = document.getElementById(`chat-message`);

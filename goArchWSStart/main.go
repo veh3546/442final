@@ -49,6 +49,7 @@ func main() {
 	mux.HandleFunc("/turn", service.GetTurnHandler)
 	mux.HandleFunc("/next", service.NextTurnHandler)
 	mux.HandleFunc("/ws/chat", service.ChatHandler)
+	mux.HandleFunc("/board", service.BoardHandler)
 
 	// Root (/) serves login page
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

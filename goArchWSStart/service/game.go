@@ -23,3 +23,8 @@ func NextTurnHandler(w http.ResponseWriter, r *http.Request) {
 	next := data_access.NextTurn()
 	jsonResponse(w, http.StatusOK, map[string]string{"nextTurn": next})
 }
+
+func BoardHandler(w http.ResponseWriter, r *http.Request) {
+	// Serve the board.html file from the root directory
+	http.ServeFile(w, r, "../board.html")
+}
