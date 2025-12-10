@@ -26,5 +26,5 @@ func NextTurnHandler(w http.ResponseWriter, r *http.Request) {
 
 func BoardHandler(w http.ResponseWriter, r *http.Request) {
 	// Serve the board.html file from the root directory
-	http.ServeFile(w, r, "../board.html")
+	http.ServeFile(w, r, "./static/board.html")
 }
